@@ -115,7 +115,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
     }
 
     @Override
-    public void onConnected(long time, long length, boolean isAcceptRanges) {
+    public void onConnected(long time, long length, boolean isAcceptRanges, String finalUri) {
         if (mConnectTask.isCanceled()) {
             // despite connection is finished, the entire downloader is canceled
             onConnectCanceled();
@@ -125,6 +125,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
 
             mDownloadInfo.setAcceptRanges(isAcceptRanges);
             mDownloadInfo.setLength(length);
+            mRequest.setFinalUri(finalUri);
             download(length, isAcceptRanges);
         }
     }
@@ -258,7 +259,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
                 } else {
                     end = start + average - 1;
                 }
-                ThreadInfo threadInfo = new ThreadInfo(i, mTag, mRequest.getUri(), start, end, 0);
+                ThreadInfo threadInfo = new ThreadInfo(i, mTag, mRequest.getFinalUri(), start, end, 0);
                 threadInfos.add(threadInfo);
             }
         }
@@ -267,7 +268,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
 
     //TODO
     private ThreadInfo getSingleThreadInfo() {
-        ThreadInfo threadInfo = new ThreadInfo(0, mTag, mRequest.getUri(), 0);
+        ThreadInfo threadInfo = new ThreadInfo(0, mTag, mRequest.getFinalUri(), 0);
         return threadInfo;
     }
 

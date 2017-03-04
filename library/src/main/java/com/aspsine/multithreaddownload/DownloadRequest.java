@@ -9,6 +9,8 @@ import java.io.File;
 public class DownloadRequest {
     private String mUri;
 
+    private String finalUri;
+
     private File mFolder;
 
     private CharSequence mName;
@@ -30,6 +32,14 @@ public class DownloadRequest {
 
     public String getUri() {
         return mUri;
+    }
+
+    public String getFinalUri() {
+        return finalUri;
+    }
+
+    public void setFinalUri(String finalUri) {
+        this.finalUri = finalUri;
     }
 
     public File getFolder() {
