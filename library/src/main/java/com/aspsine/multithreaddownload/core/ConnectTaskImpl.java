@@ -77,11 +77,15 @@ public class ConnectTaskImpl implements ConnectTask {
     }
 
     private void executeConnection() throws DownloadException {
+        executeConnection(mUri, 0);
+    }
+
+    private void executeConnection(String uri, int redirectCount) throws DownloadException {
         mStartTime = System.currentTimeMillis();
         HttpURLConnection httpConnection = null;
         final URL url;
         try {
-            url = new URL(mUri);
+            url = new URL(uri);
         } catch (MalformedURLException e) {
             throw new DownloadException(DownloadStatus.STATUS_FAILED, "Bad url.", e);
         }
@@ -93,9 +97,20 @@ public class ConnectTaskImpl implements ConnectTask {
             httpConnection.setRequestProperty("Range", "bytes=" + 0 + "-");
             final int responseCode = httpConnection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                parseResponse(httpConnection, false);
+                parseResponse(httpConnection, false, uri);
             } else if (responseCode == HttpURLConnection.HTTP_PARTIAL) {
-                parseResponse(httpConnection, true);
+                parseResponse(httpConnection, true, uri);
+            } else if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+                String location = httpConnection.getHeaderField("Location");
+                if (location == null) {
+                    throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
+                            + HttpURLConnection.HTTP_MOVED_TEMP + ", but Header Location is null");
+                } else if (redirectCount > 5) {
+                    throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
+                            + HttpURLConnection.HTTP_MOVED_TEMP + ",but Temporary Redirect is too many, redirectCount is" + redirectCount);
+                } else {
+                    executeConnection(location, ++redirectCount);
+                }
             } else {
                 throw new DownloadException(DownloadStatus.STATUS_FAILED, "UnSupported response code:" + responseCode);
             }
@@ -110,7 +125,7 @@ public class ConnectTaskImpl implements ConnectTask {
         }
     }
 
-    private void parseResponse(HttpURLConnection httpConnection, boolean isAcceptRanges) throws DownloadException {
+    private void parseResponse(HttpURLConnection httpConnection, boolean isAcceptRanges, String finalUri) throws DownloadException {
 
         final long length;
         String contentLength = httpConnection.getHeaderField("Content-Length");
@@ -129,7 +144,7 @@ public class ConnectTaskImpl implements ConnectTask {
         //Successful
         mStatus = DownloadStatus.STATUS_CONNECTED;
         final long timeDelta = System.currentTimeMillis() - mStartTime;
-        mOnConnectListener.onConnected(timeDelta, length, isAcceptRanges);
+        mOnConnectListener.onConnected(timeDelta, length, isAcceptRanges, finalUri);
     }
 
     private void checkCanceledOrPaused() throws DownloadException {
