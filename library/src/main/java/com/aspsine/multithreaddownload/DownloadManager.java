@@ -160,17 +160,19 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
 
     public boolean isRunning(String tag) {
         String key = createKey(tag);
-        if (mDownloaderMap.containsKey(key)) {
-            Downloader downloader = mDownloaderMap.get(key);
-            if (downloader != null) {
-                return downloader.isRunning();
-            }
+        Downloader downloader = mDownloaderMap.get(key);
+        if (downloader != null) {
+            return downloader.isRunning();
         }
         return false;
     }
 
     public DownloadInfo getDownloadInfo(String tag) {
         String key = createKey(tag);
+        Downloader downloader = mDownloaderMap.get(key);
+        if (downloader != null) {
+            return downloader.getDownloadInfo();
+        }
         List<ThreadInfo> threadInfos = mDBManager.getThreadInfos(key);
         DownloadInfo downloadInfo = null;
         if (!threadInfos.isEmpty()) {
@@ -209,7 +211,7 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
         if (tag == null) {
             throw new NullPointerException("Tag can't be null!");
         }
-        return String.valueOf(tag.hashCode());
+        return tag;
     }
 
 

@@ -15,6 +15,7 @@ public class DownloadStatus {
     public static final int STATUS_PAUSED = 106;
     public static final int STATUS_CANCELED = 107;
     public static final int STATUS_FAILED = 108;
+    public static final int STATUS_WAITING = 109;
 
     private int status;
     private long time;

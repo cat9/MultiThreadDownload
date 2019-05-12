@@ -19,6 +19,11 @@ public class DownloadConfiguration {
      */
     private int threadNum;
 
+    /**
+     * if file size is less than singleDownloadSize,it should use single download thread.
+     */
+    private long singleDownloadSize;
+
 
     /**
      * init with default value
@@ -42,5 +47,13 @@ public class DownloadConfiguration {
 
     public void setThreadNum(int threadNum) {
         this.threadNum = threadNum;
+    }
+
+    public void setSingleDownloadSize(long singleDownloadSize){
+        this.singleDownloadSize=singleDownloadSize;
+    }
+
+    public long getSingleDownloadSize(){
+        return this.singleDownloadSize;
     }
 }

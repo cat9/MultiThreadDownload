@@ -62,6 +62,11 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
     }
 
     @Override
+    public DownloadInfo getDownloadInfo(){
+        return mDownloadInfo;
+    }
+
+    @Override
     public boolean isRunning() {
         return mStatus == DownloadStatus.STATUS_STARTED
                 || mStatus == DownloadStatus.STATUS_CONNECTING
@@ -226,7 +231,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
     //TODO
     private void initDownloadTasks(long length, boolean acceptRanges) {
         mDownloadTasks.clear();
-        if (acceptRanges) {
+        if (acceptRanges && !mRequest.checkSingleTask(mConfig,length)) {
             List<ThreadInfo> threadInfos = getMultiThreadInfos(length);
             // init finished
             int finished = 0;

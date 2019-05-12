@@ -7,6 +7,7 @@ import java.io.File;
  * Created by Aspsine on 2015/4/20.
  */
 public class DownloadRequest {
+
     private String mUri;
 
     private String finalUri;
@@ -19,15 +20,21 @@ public class DownloadRequest {
 
     private boolean mScannable;
 
+    private boolean mForceSingleTask;
+
+    private long mSingleDownloadSize;
+
     private DownloadRequest() {
     }
 
-    private DownloadRequest(String uri, File folder, CharSequence name, CharSequence description, boolean scannable) {
+    private DownloadRequest(String uri, File folder, CharSequence name, CharSequence description, boolean scannable,boolean singleTask,long singleDownloadSize) {
         this.mUri = uri;
         this.mFolder = folder;
         this.mName = name;
         this.mDescription = description;
         this.mScannable = scannable;
+        this.mForceSingleTask =singleTask;
+        this.mSingleDownloadSize = singleDownloadSize;
     }
 
     public String getUri() {
@@ -58,6 +65,23 @@ public class DownloadRequest {
         return mScannable;
     }
 
+    public long getSingleDownloadSize(){
+        return mSingleDownloadSize;
+    }
+
+    public boolean checkSingleTask(DownloadConfiguration configuration,long length){
+        if(mForceSingleTask){
+            return true;
+        }
+        if(mSingleDownloadSize<=0){
+            mSingleDownloadSize=configuration.getSingleDownloadSize();
+        }
+        if(length<=mSingleDownloadSize){
+            return true;
+        }
+        return false;
+    }
+
     public static class Builder {
 
         private String mUri;
@@ -69,6 +93,10 @@ public class DownloadRequest {
         private CharSequence mDescription;
 
         private boolean mScannable;
+
+        private boolean mForceSingleTask;
+
+        private long mSingleDownloadSize;
 
         public Builder() {
         }
@@ -98,8 +126,18 @@ public class DownloadRequest {
             return this;
         }
 
+        public Builder setSingleTask(boolean singleTask){
+            this.mForceSingleTask=singleTask;
+            return this;
+        }
+
+        public Builder setSingleDownloadSize(long singleDownloadSize){
+            this.mSingleDownloadSize=singleDownloadSize;
+            return this;
+        }
+
         public DownloadRequest build() {
-            DownloadRequest request = new DownloadRequest(mUri, mFolder, mName, mDescription, mScannable);
+            DownloadRequest request = new DownloadRequest(mUri, mFolder, mName, mDescription, mScannable,mForceSingleTask,mSingleDownloadSize);
             return request;
         }
     }
