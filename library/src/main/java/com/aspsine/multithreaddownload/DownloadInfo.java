@@ -81,4 +81,18 @@ public class DownloadInfo {
     public void setAcceptRanges(boolean acceptRanges) {
         this.acceptRanges = acceptRanges;
     }
+
+    public int calculatePercent(){
+        if(length<=0){
+            return 0;
+        }
+        long percent=finished*100/length;
+        if(percent>100){
+            percent=100;
+        }
+        if(percent<0){
+            percent=0;
+        }
+        return (int)percent;
+    }
 }

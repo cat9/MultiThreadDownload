@@ -21,7 +21,17 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by Aspsine on 2015/7/27.
@@ -139,6 +149,14 @@ public abstract class DownloadTaskImpl implements DownloadTask {
             httpConnection.setConnectTimeout(HTTP.CONNECT_TIME_OUT);
             httpConnection.setReadTimeout(HTTP.READ_TIME_OUT);
             httpConnection.setRequestMethod(HTTP.GET);
+            if (httpConnection instanceof HttpsURLConnection) { // 是Https请求
+                SSLContext sslContext = getSLLContext();
+                if (sslContext != null) {
+                    SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+                    ((HttpsURLConnection) httpConnection).setSSLSocketFactory(sslSocketFactory);
+                    ((HttpsURLConnection) httpConnection).setHostnameVerifier(hostnameVerifier);
+                }
+            }
             setHttpHeader(getHttpHeaders(mThreadInfo), httpConnection);
             final int responseCode = httpConnection.getResponseCode();
             if (responseCode == getResponseCode()) {
@@ -204,8 +222,12 @@ public abstract class DownloadTaskImpl implements DownloadTask {
                 raf.write(buffer, 0, len);
                 mThreadInfo.setFinished(mThreadInfo.getFinished() + len);
                 synchronized (mOnDownloadListener) {
+                    int oldPercent=mDownloadInfo.calculatePercent();
                     mDownloadInfo.setFinished(mDownloadInfo.getFinished() + len);
-                    mOnDownloadListener.onDownloadProgress(mDownloadInfo.getFinished(), mDownloadInfo.getLength());
+                    int newPercent=mDownloadInfo.calculatePercent();
+                    if(oldPercent!=newPercent){
+                        mOnDownloadListener.onDownloadProgress(mDownloadInfo.getFinished(), mDownloadInfo.getLength());
+                    }
                 }
             } catch (IOException e) {
                 updateDB(mThreadInfo);
@@ -224,6 +246,35 @@ public abstract class DownloadTaskImpl implements DownloadTask {
             throw new DownloadException(DownloadStatus.STATUS_PAUSED, "Download paused!");
         }
     }
+
+    private SSLContext getSLLContext() {
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType)  {}
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            }}, new SecureRandom());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sslContext;
+    }
+
+    private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            return true;
+        }
+    };
 
 
     protected abstract void insertIntoDB(ThreadInfo info);

@@ -15,6 +15,7 @@ import com.aspsine.multithreaddownload.db.DataBaseManager;
 import com.aspsine.multithreaddownload.db.ThreadInfo;
 import com.aspsine.multithreaddownload.util.L;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
      * private construction
      */
     private DownloadManager() {
-        mDownloaderMap = new LinkedHashMap<String, Downloader>();
+        mDownloaderMap = Collections.synchronizedMap(new LinkedHashMap<String, Downloader>());
     }
 
     public void init(Context context) {
@@ -79,34 +80,35 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
 
     @Override
     public void onDestroyed(final String key, Downloader downloader) {
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mDownloaderMap.containsKey(key)) {
-                    mDownloaderMap.remove(key);
-                }
-            }
-        });
+        mDownloaderMap.remove(key);
     }
 
     public void download(DownloadRequest request, String tag, CallBack callBack) {
         final String key = createKey(tag);
-        if (check(key)) {
-            DownloadResponse response = new DownloadResponseImpl(mDelivery, callBack);
-            Downloader downloader = new DownloaderImpl(request, response, mExecutorService, mDBManager, key, mConfig, this);
-            mDownloaderMap.put(key, downloader);
-            downloader.start();
+        Downloader old = mDownloaderMap.get(key);
+        if(old!=null){
+            if(old.isRunning()){
+                old.pause();
+                try {
+                    Thread.sleep(50);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            mDownloaderMap.remove(key);
         }
+        DownloadResponse response = new DownloadResponseImpl(mDelivery, callBack);
+        Downloader downloader = new DownloaderImpl(request, response, mExecutorService, mDBManager, key, mConfig, this);
+        mDownloaderMap.put(key, downloader);
+        downloader.start();
     }
 
     public void pause(String tag) {
         String key = createKey(tag);
-        if (mDownloaderMap.containsKey(key)) {
-            Downloader downloader = mDownloaderMap.get(key);
-            if (downloader != null) {
-                if (downloader.isRunning()) {
-                    downloader.pause();
-                }
+        Downloader downloader = mDownloaderMap.get(key);
+        if (downloader != null) {
+            if (downloader.isRunning()) {
+                downloader.pause();
             }
             mDownloaderMap.remove(key);
         }
@@ -114,13 +116,12 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
 
     public void cancel(String tag) {
         String key = createKey(tag);
-        if (mDownloaderMap.containsKey(key)) {
-            Downloader downloader = mDownloaderMap.get(key);
-            if (downloader != null) {
-                downloader.cancel();
-            }
+        Downloader downloader = mDownloaderMap.get(key);
+        if (downloader != null) {
+            downloader.cancel();
             mDownloaderMap.remove(key);
         }
+
     }
 
     public void pauseAll() {
@@ -134,6 +135,7 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
                         }
                     }
                 }
+                mDownloaderMap.clear();
             }
         });
     }
@@ -190,21 +192,6 @@ public class DownloadManager implements Downloader.OnDownloaderDestroyedListener
             downloadInfo.setProgress(progress);
         }
         return downloadInfo;
-    }
-
-    private boolean check(String key) {
-        if (mDownloaderMap.containsKey(key)) {
-            Downloader downloader = mDownloaderMap.get(key);
-            if (downloader != null) {
-                if (downloader.isRunning()) {
-                    L.w("Task has been started!");
-                    return false;
-                } else {
-                    throw new IllegalStateException("Downloader instance with same tag has not been destroyed!");
-                }
-            }
-        }
-        return true;
     }
 
     private static String createKey(String tag) {
