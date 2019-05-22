@@ -90,4 +90,17 @@ public class DownloadStatus {
     public void setCallBack(CallBack callBack) {
         this.callBack = callBack;
     }
+
+    public DownloadStatus copy(){
+        DownloadStatus st=new DownloadStatus();
+        st.status=this.status;
+        st.time=this.time;
+        st.length=this.length;
+        st.finished=this.finished;
+        st.percent=this.percent;
+        st.acceptRanges=this.acceptRanges;
+        st.exception=this.exception;
+        st.callBack=this.callBack;
+        return st;
+    }
 }

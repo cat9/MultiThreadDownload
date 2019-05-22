@@ -1,6 +1,7 @@
 package com.aspsine.multithreaddownload.core;
 
 import android.os.Handler;
+import android.util.Log;
 
 import com.aspsine.multithreaddownload.CallBack;
 import com.aspsine.multithreaddownload.DownloadException;
@@ -26,7 +27,7 @@ public class DownloadStatusDeliveryImpl implements DownloadStatusDelivery {
 
     @Override
     public void post(DownloadStatus status) {
-        mDownloadStatusPoster.execute(new DownloadStatusDeliveryRunnable(status));
+        mDownloadStatusPoster.execute(new DownloadStatusDeliveryRunnable(status.copy()));
     }
 
     private static class DownloadStatusDeliveryRunnable implements Runnable {
