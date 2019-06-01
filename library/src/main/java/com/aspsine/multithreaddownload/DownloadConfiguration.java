@@ -24,6 +24,7 @@ public class DownloadConfiguration {
      */
     private long singleDownloadSize;
 
+    private int connectTimeout=8000,readTimeout=8000;
 
     /**
      * init with default value
@@ -47,6 +48,22 @@ public class DownloadConfiguration {
 
     public void setThreadNum(int threadNum) {
         this.threadNum = threadNum;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
     }
 
     public void setSingleDownloadSize(long singleDownloadSize){

@@ -4,6 +4,7 @@ import android.os.Process;
 import android.text.TextUtils;
 
 import com.aspsine.multithreaddownload.Constants;
+import com.aspsine.multithreaddownload.DownloadConfiguration;
 import com.aspsine.multithreaddownload.DownloadException;
 import com.aspsine.multithreaddownload.architecture.ConnectTask;
 import com.aspsine.multithreaddownload.architecture.DownloadStatus;
@@ -18,6 +19,7 @@ import java.net.URL;
  * Created by Aspsine on 2015/7/20.
  */
 public class ConnectTaskImpl implements ConnectTask {
+    private DownloadConfiguration mConfig;
     private final String mUri;
     private final OnConnectListener mOnConnectListener;
 
@@ -25,7 +27,8 @@ public class ConnectTaskImpl implements ConnectTask {
 
     private volatile long mStartTime;
 
-    public ConnectTaskImpl(String uri, OnConnectListener listener) {
+    public ConnectTaskImpl(DownloadConfiguration config,String uri, OnConnectListener listener) {
+        this.mConfig=config;
         this.mUri = uri;
         this.mOnConnectListener = listener;
     }
@@ -91,9 +94,9 @@ public class ConnectTaskImpl implements ConnectTask {
         }
         try {
             httpConnection = (HttpURLConnection) url.openConnection();
-            httpConnection.setConnectTimeout(Constants.HTTP.CONNECT_TIME_OUT);
-            httpConnection.setReadTimeout(Constants.HTTP.READ_TIME_OUT);
-            httpConnection.setRequestMethod(Constants.HTTP.GET);
+            httpConnection.setConnectTimeout(mConfig.getConnectTimeout());
+            httpConnection.setReadTimeout(mConfig.getReadTimeout());
+            httpConnection.setRequestMethod("GET");
             httpConnection.setRequestProperty("Range", "bytes=" + 0 + "-");
             final int responseCode = httpConnection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {

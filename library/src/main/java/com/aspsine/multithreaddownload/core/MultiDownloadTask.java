@@ -4,6 +4,7 @@ package com.aspsine.multithreaddownload.core;
  * Created by Aspsine on 2015/7/20.
  */
 
+import com.aspsine.multithreaddownload.DownloadConfiguration;
 import com.aspsine.multithreaddownload.DownloadInfo;
 import com.aspsine.multithreaddownload.db.DataBaseManager;
 import com.aspsine.multithreaddownload.db.ThreadInfo;
@@ -22,9 +23,9 @@ public class MultiDownloadTask extends DownloadTaskImpl {
 
     private DataBaseManager mDBManager;
 
-    public MultiDownloadTask(DownloadInfo downloadInfo, ThreadInfo threadInfo, DataBaseManager dbManager, OnDownloadListener listener) {
+    public MultiDownloadTask(DownloadConfiguration config, DownloadInfo downloadInfo, ThreadInfo threadInfo, DataBaseManager dbManager, OnDownloadListener listener) {
 
-        super(downloadInfo, threadInfo, listener);
+        super(config,downloadInfo, threadInfo, listener);
         this.mDBManager = dbManager;
     }
 

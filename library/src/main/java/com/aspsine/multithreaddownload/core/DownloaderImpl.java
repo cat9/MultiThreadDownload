@@ -215,7 +215,7 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
     }
 
     private void connect() {
-        mConnectTask = new ConnectTaskImpl(mRequest.getUri(), this);
+        mConnectTask = new ConnectTaskImpl(mConfig,mRequest.getUri(), this);
         mExecutor.execute(mConnectTask);
     }
 
@@ -240,11 +240,11 @@ public class DownloaderImpl implements Downloader, ConnectTask.OnConnectListener
             }
             mDownloadInfo.setFinished(finished);
             for (ThreadInfo info : threadInfos) {
-                mDownloadTasks.add(new MultiDownloadTask(mDownloadInfo, info, mDBManager, this));
+                mDownloadTasks.add(new MultiDownloadTask(mConfig,mDownloadInfo, info, mDBManager, this));
             }
         } else {
             ThreadInfo info = getSingleThreadInfo();
-            mDownloadTasks.add(new SingleDownloadTask(mDownloadInfo, info, this));
+            mDownloadTasks.add(new SingleDownloadTask(mConfig,mDownloadInfo, info, this));
         }
     }
 

@@ -4,7 +4,7 @@ package com.aspsine.multithreaddownload.core;
 import android.os.Process;
 import android.text.TextUtils;
 
-import com.aspsine.multithreaddownload.Constants.HTTP;
+import com.aspsine.multithreaddownload.DownloadConfiguration;
 import com.aspsine.multithreaddownload.DownloadException;
 import com.aspsine.multithreaddownload.DownloadInfo;
 import com.aspsine.multithreaddownload.architecture.DownloadStatus;
@@ -48,7 +48,10 @@ public abstract class DownloadTaskImpl implements DownloadTask {
 
     private volatile int mCommend = 0;
 
-    public DownloadTaskImpl(DownloadInfo downloadInfo, ThreadInfo threadInfo, OnDownloadListener listener) {
+    private DownloadConfiguration mConfig;
+
+    public DownloadTaskImpl(DownloadConfiguration config,DownloadInfo downloadInfo, ThreadInfo threadInfo, OnDownloadListener listener) {
+        this.mConfig=config;
         this.mDownloadInfo = downloadInfo;
         this.mThreadInfo = threadInfo;
         this.mOnDownloadListener = listener;
@@ -146,9 +149,9 @@ public abstract class DownloadTaskImpl implements DownloadTask {
         HttpURLConnection httpConnection = null;
         try {
             httpConnection = (HttpURLConnection) url.openConnection();
-            httpConnection.setConnectTimeout(HTTP.CONNECT_TIME_OUT);
-            httpConnection.setReadTimeout(HTTP.READ_TIME_OUT);
-            httpConnection.setRequestMethod(HTTP.GET);
+            httpConnection.setConnectTimeout(mConfig.getConnectTimeout());
+            httpConnection.setReadTimeout(mConfig.getReadTimeout());
+            httpConnection.setRequestMethod("GET");
             if (httpConnection instanceof HttpsURLConnection) { // 是Https请求
                 SSLContext sslContext = getSLLContext();
                 if (sslContext != null) {

@@ -1,6 +1,7 @@
 package com.aspsine.multithreaddownload.core;
 
 
+import com.aspsine.multithreaddownload.DownloadConfiguration;
 import com.aspsine.multithreaddownload.DownloadInfo;
 import com.aspsine.multithreaddownload.db.ThreadInfo;
 
@@ -15,8 +16,8 @@ import java.util.Map;
  */
 public class SingleDownloadTask extends DownloadTaskImpl {
 
-    public SingleDownloadTask(DownloadInfo mDownloadInfo, ThreadInfo mThreadInfo, OnDownloadListener mOnDownloadListener) {
-        super(mDownloadInfo, mThreadInfo, mOnDownloadListener);
+    public SingleDownloadTask(DownloadConfiguration config, DownloadInfo mDownloadInfo, ThreadInfo mThreadInfo, OnDownloadListener mOnDownloadListener) {
+        super(config,mDownloadInfo, mThreadInfo, mOnDownloadListener);
     }
 
     @Override
