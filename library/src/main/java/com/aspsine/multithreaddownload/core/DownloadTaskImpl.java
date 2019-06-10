@@ -10,6 +10,7 @@ import com.aspsine.multithreaddownload.DownloadInfo;
 import com.aspsine.multithreaddownload.architecture.DownloadStatus;
 import com.aspsine.multithreaddownload.architecture.DownloadTask;
 import com.aspsine.multithreaddownload.db.ThreadInfo;
+import com.aspsine.multithreaddownload.util.HttpUtils;
 import com.aspsine.multithreaddownload.util.IOCloseUtils;
 
 import java.io.File;
@@ -139,9 +140,13 @@ public abstract class DownloadTaskImpl implements DownloadTask {
     }
 
     private void executeDownload() throws DownloadException {
+        executeDownload(mThreadInfo.getUri(), 0);
+    }
+
+    private void executeDownload(String uri, int redirectCount) throws DownloadException {
         final URL url;
         try {
-            url = new URL(mThreadInfo.getUri());
+            url = new URL(uri);
         } catch (MalformedURLException e) {
             throw new DownloadException(DownloadStatus.STATUS_FAILED, "Bad url.", e);
         }
@@ -164,6 +169,17 @@ public abstract class DownloadTaskImpl implements DownloadTask {
             final int responseCode = httpConnection.getResponseCode();
             if (responseCode == getResponseCode()) {
                 transferData(httpConnection);
+            }else if(HttpUtils.isRedirectable(responseCode)){
+                String location = httpConnection.getHeaderField("Location");
+                if (location == null) {
+                    throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
+                            + responseCode + ", but Header Location is null");
+                } else if (redirectCount > 5) {
+                    throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
+                            + responseCode + ",but Temporary Redirect is too many, redirectCount is" + redirectCount);
+                } else {
+                    executeDownload(location, ++redirectCount);
+                }
             } else {
                 throw new DownloadException(DownloadStatus.STATUS_FAILED, "UnSupported response code:" + responseCode);
             }

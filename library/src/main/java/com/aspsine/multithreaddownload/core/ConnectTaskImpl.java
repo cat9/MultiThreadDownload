@@ -8,12 +8,23 @@ import com.aspsine.multithreaddownload.DownloadConfiguration;
 import com.aspsine.multithreaddownload.DownloadException;
 import com.aspsine.multithreaddownload.architecture.ConnectTask;
 import com.aspsine.multithreaddownload.architecture.DownloadStatus;
+import com.aspsine.multithreaddownload.util.HttpUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by Aspsine on 2015/7/20.
@@ -98,19 +109,28 @@ public class ConnectTaskImpl implements ConnectTask {
             httpConnection.setReadTimeout(mConfig.getReadTimeout());
             httpConnection.setRequestMethod("GET");
             httpConnection.setRequestProperty("Range", "bytes=" + 0 + "-");
+            if (httpConnection instanceof HttpsURLConnection) { // 是Https请求
+                SSLContext sslContext = getSLLContext();
+                if (sslContext != null) {
+                    SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+                    ((HttpsURLConnection) httpConnection).setSSLSocketFactory(sslSocketFactory);
+                    ((HttpsURLConnection) httpConnection).setHostnameVerifier(hostnameVerifier);
+                }
+            }
+
             final int responseCode = httpConnection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 parseResponse(httpConnection, false, uri);
             } else if (responseCode == HttpURLConnection.HTTP_PARTIAL) {
                 parseResponse(httpConnection, true, uri);
-            } else if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+            } else if (HttpUtils.isRedirectable(responseCode)) {
                 String location = httpConnection.getHeaderField("Location");
                 if (location == null) {
                     throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
-                            + HttpURLConnection.HTTP_MOVED_TEMP + ", but Header Location is null");
+                            + responseCode + ", but Header Location is null");
                 } else if (redirectCount > 5) {
                     throw new DownloadException(DownloadStatus.STATUS_FAILED, "response code:"
-                            + HttpURLConnection.HTTP_MOVED_TEMP + ",but Temporary Redirect is too many, redirectCount is" + redirectCount);
+                            + responseCode + ",but Temporary Redirect is too many, redirectCount is" + redirectCount);
                 } else {
                     executeConnection(location, ++redirectCount);
                 }
@@ -149,6 +169,37 @@ public class ConnectTaskImpl implements ConnectTask {
         final long timeDelta = System.currentTimeMillis() - mStartTime;
         mOnConnectListener.onConnected(timeDelta, length, isAcceptRanges, finalUri);
     }
+
+
+    private SSLContext getSLLContext() {
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType)  {}
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            }}, new SecureRandom());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sslContext;
+    }
+
+    private HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            return true;
+        }
+    };
+
 
     private void checkCanceledOrPaused() throws DownloadException {
         if (isCanceled()) {
